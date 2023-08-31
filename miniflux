@@ -1,0 +1,41 @@
+services:
+  miniflux:
+    image: miniflux/miniflux:latest
+    container_name: miniflux
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://miniflux:secret@db/miniflux?sslmode=disable
+      - RUN_MIGRATIONS=1
+      - CREATE_ADMIN=1
+      - ADMIN_USERNAME=
+      - ADMIN_PASSWORD=
+      - POLLING_FREQUENCY=5
+    networks:
+      - miniflux
+      - web
+  db:
+    image: postgres:latest
+    container_name: miniflux-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=miniflux
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - miniflux-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "miniflux"]
+      interval: 10s
+      start_period: 30s
+    networks:
+      - miniflux
+
+networks:
+  miniflux:
+  web:
+    external: true
+    
+volumes:
+  miniflux-db:#                                           
